@@ -25,6 +25,7 @@ python -m pytest tests/ -v
 | [Roteiro de Apresentação](docs/ROTEIRO_APRESENTACAO.md) | Script cronometrado (~17 min) para demonstração oral à banca |
 | [Perguntas Técnicas](docs/perguntasTecnicas.md) | Respostas preparadas para perguntas da banca sobre escalonamento, sincronização, deadlock, memória, etc. |
 | [Explicação do Código](docs/explicacaoCodigo.md) | Estrutura do projeto, papel de cada arquivo e fluxo de execução |
+| [Guia de Slides](docs/slides.md) | Roteiro para montar a apresentação em slides |
 
 ## Mapa: Conceito SO → Temática Bancária
 
