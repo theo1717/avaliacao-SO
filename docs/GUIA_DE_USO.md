@@ -605,3 +605,5 @@ O enunciado aceita terminal, desktop ou web; este projeto utiliza **interface te
 Para o roteiro cronometrado de apresentação oral, consulte [ROTEIRO_APRESENTACAO.md](ROTEIRO_APRESENTACAO.md).
 
 Para perguntas técnicas da banca, consulte [perguntasTecnicas.md](perguntasTecnicas.md).
+
+Para entender a estrutura e o papel de cada arquivo, consulte [explicacaoCodigo.md](explicacaoCodigo.md).

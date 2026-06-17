@@ -24,6 +24,7 @@ python -m pytest tests/ -v
 | [Guia de Uso](docs/GUIA_DE_USO.md) | Manual completo: fluxos passo a passo, o que observar em cada tela e mapeamento aos requisitos do item 3 |
 | [Roteiro de Apresentação](docs/ROTEIRO_APRESENTACAO.md) | Script cronometrado (~17 min) para demonstração oral à banca |
 | [Perguntas Técnicas](docs/perguntasTecnicas.md) | Respostas preparadas para perguntas da banca sobre escalonamento, sincronização, deadlock, memória, etc. |
+| [Explicação do Código](docs/explicacaoCodigo.md) | Estrutura do projeto, papel de cada arquivo e fluxo de execução |
 
 ## Mapa: Conceito SO → Temática Bancária
 
