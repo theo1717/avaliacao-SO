@@ -17,6 +17,14 @@ Para rodar os testes:
 python -m pytest tests/ -v
 ```
 
+## Documentação
+
+| Documento | Descrição |
+|---|---|
+| [Guia de Uso](docs/GUIA_DE_USO.md) | Manual completo: fluxos passo a passo, o que observar em cada tela e mapeamento aos requisitos do item 3 |
+| [Roteiro de Apresentação](docs/ROTEIRO_APRESENTACAO.md) | Script cronometrado (~17 min) para demonstração oral à banca |
+| [Perguntas Técnicas](docs/perguntasTecnicas.md) | Respostas preparadas para perguntas da banca sobre escalonamento, sincronização, deadlock, memória, etc. |
+
 ## Mapa: Conceito SO → Temática Bancária
 
 | Conceito SO | Implementação no projeto |
@@ -47,13 +55,18 @@ src/
 
 ## Funcionalidades do menu
 
-1. **Simulação de Escalonamento** — Round Robin, Prioridade ou EDF
-2. **Condição de Corrida** — saldo e log com/sem mutex
-3. **Produtor-Consumidor** — buffer limitado com semáforos
-4. **Deadlock e Prevenção** — demonstra e resolve deadlock em transferências
-5. **Gerenciamento de Memória** — alocação de quadros e bloqueio por falta de memória
-6. **Configurações** — quantum, processos, quadros de memória, delay
-7. **Relatório de métricas** — espera, resposta, turnaround, deadlines perdidos
+Ao iniciar, o sistema exibe o painel do **Banco Nexus** com contas ativas e saldos.
+
+| Opção | Nome no sistema | Conceito SO (para apresentação) |
+|---|---|---|
+| 1 | Central de Processamento de Transações | Escalonamento RR / Prioridade / EDF |
+| 2 | Rede de Caixas Eletrônicos | Threads ATM + monitor |
+| 3 | Auditoria de Integridade | Condição de corrida (saldo e log) |
+| 4 | Gestão de Transferências Simultâneas | Deadlock e prevenção |
+| 5 | Cache de Dados em Memória | Gerenciamento de memória |
+| 6 | Esteira de Transações | Produtor-consumidor |
+| 7 | Parâmetros do Sistema | Configurações |
+| 8 | Painel Gerencial | Métricas de desempenho |
 
 ## Bibliotecas utilizadas
 
