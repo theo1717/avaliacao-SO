@@ -1,7 +1,7 @@
 from src.core.metrics import SimulationMetrics
 from src.core.process import Priority, ProcessState
 from src.core.process_manager import ProcessManager
-from src.core.scheduler import PriorityScheduler, RoundRobinScheduler
+from src.core.scheduler import EDFScheduler, PriorityScheduler, RoundRobinScheduler
 
 
 def _setup_pm_with_processes(quantum: int = 2) -> ProcessManager:
@@ -60,3 +60,21 @@ def test_priority_completes_all_processes():
         ticks += 1
 
     assert len(metrics.completed) == 3
+
+
+def test_edf_executes_earliest_deadline_first():
+    pm = ProcessManager()
+    late = pm.create_process(
+        "Late", Priority.BATCH, 4, arrival_time=0, deadline=20
+    )
+    early = pm.create_process(
+        "Early", Priority.BATCH, 4, arrival_time=0, deadline=8
+    )
+    pm.admit_process(late.pid)
+    pm.admit_process(early.pid)
+
+    metrics = SimulationMetrics()
+    scheduler = EDFScheduler(pm, metrics)
+    scheduler.tick(0)
+    assert scheduler.current_process is not None
+    assert scheduler.current_process.pid == early.pid

@@ -29,7 +29,11 @@ class ProcessManager:
         quantum: int = 2,
         operation_type: str = "operacao",
         deadline: int = 0,
+        pages_required: int = 0,
+        account_id: int = 1,
     ) -> PCB:
+        if pages_required <= 0:
+            pages_required = max(1, burst_time // 3)
         pcb = PCB(
             pid=self._next_pid,
             name=name,
@@ -41,6 +45,8 @@ class ProcessManager:
             deadline=deadline,
             arrival_time=arrival_time,
             operation_type=operation_type,
+            pages_required=pages_required,
+            account_id=account_id,
         )
         self.processes[pcb.pid] = pcb
         self._next_pid += 1

@@ -1,6 +1,6 @@
 from src.concurrency.deadlock import DeadlockDemo
 from src.concurrency.producer_consumer import run_producer_consumer_demo
-from src.concurrency.sync_primitives import run_race_condition_demo
+from src.concurrency.sync_primitives import run_log_race_demo, run_race_condition_demo
 from src.simulation.engine import SimulationConfig, SimulationEngine
 from src.ui.display import Display
 
@@ -25,8 +25,10 @@ class MainMenu:
             elif choice == "4":
                 self._deadlock_menu()
             elif choice == "5":
-                self._config_menu()
+                self._memory_menu()
             elif choice == "6":
+                self._config_menu()
+            elif choice == "7":
                 self._show_last_metrics()
             elif choice == "0":
                 print("\nEncerrando simulador. Ate logo!")
@@ -36,16 +38,18 @@ class MainMenu:
 
     def _show_main_menu(self) -> None:
         self.display.header("Simulador Bancario SO")
-        print("1. Simulacao de Escalonamento (RR / Prioridade)")
-        print("2. Demo: Condicao de Corrida (com/sem mutex)")
+        print("1. Simulacao de Escalonamento (RR / Prioridade / EDF)")
+        print("2. Demo: Condicao de Corrida (saldo e log)")
         print("3. Demo: Produtor-Consumidor")
         print("4. Demo: Deadlock e Prevencao")
-        print("5. Configuracoes")
-        print("6. Ver relatorio de metricas")
+        print("5. Demo: Gerenciamento de Memoria")
+        print("6. Configuracoes")
+        print("7. Ver relatorio de metricas")
         print("0. Sair")
         print(
-            f"\n[Config atual: scheduler={self.config.scheduler_type}, "
+            f"\n[Config: scheduler={self.config.scheduler_type}, "
             f"quantum={self.config.quantum}, processos={self.config.num_processes}, "
+            f"memoria={self.config.memory_frames} quadros, "
             f"delay={self.config.tick_delay}s, fast={self.config.fast_mode}]"
         )
 
@@ -53,20 +57,19 @@ class MainMenu:
         self.display.header("Simulacao de Escalonamento")
         print("1. Round Robin")
         print("2. Prioridade")
-        print("3. Threads ATM + Monitor (concorrencia)")
+        print("3. EDF (Earliest Deadline First)")
+        print("4. Threads ATM + Monitor (concorrencia)")
         sub = input("Escolha: ").strip()
 
-        if sub == "3":
+        if sub == "4":
             self._run_atm_demo()
             return
 
-        if sub == "1":
-            self.config.scheduler_type = "RR"
-        elif sub == "2":
-            self.config.scheduler_type = "PRIORITY"
-        else:
+        scheduler_map = {"1": "RR", "2": "PRIORITY", "3": "EDF"}
+        if sub not in scheduler_map:
             print("Opcao invalida.")
             return
+        self.config.scheduler_type = scheduler_map[sub]
 
         mode = input("Modo (1=continuo, 2=passo a passo): ").strip()
         step = mode == "2"
@@ -74,21 +77,25 @@ class MainMenu:
         engine = SimulationEngine(config=self.config)
         engine.setup()
 
+        scheduler_names = {
+            "RR": "Round Robin",
+            "PRIORITY": "Prioridade",
+            "EDF": "EDF (Earliest Deadline First)",
+        }
+
         def on_tick(tick, pm, metrics):
             if tick % 2 == 0 or step:
                 print(f"\n--- Tick {tick} ---")
                 self.display.queue_display(pm.ready_queue)
-                running = [
-                    pm.get_process(pid)
-                    for pid in pm.ready_queue
-                ]
+                if pm.blocked_queue:
+                    print(f"  Bloqueados: {pm.blocked_queue}")
+                running = [pm.get_process(pid) for pid in pm.ready_queue]
                 if engine.scheduler and engine.scheduler.current_process:
                     running.insert(0, engine.scheduler.current_process)
-                self.display.process_table(running[:8])
+                self.display.process_table(running[:8], current_tick=tick)
+                self.display.memory_map(engine.memory, max_rows=8)
 
-        self.display.header(
-            f"Executando {'Round Robin' if self.config.scheduler_type == 'RR' else 'Prioridade'}"
-        )
+        self.display.header(f"Executando {scheduler_names[self.config.scheduler_type]}")
         self.last_metrics = engine.run(step_by_step=step, on_tick=on_tick)
         self.display.metrics_report(self.last_metrics)
         input("\nPressione Enter para voltar...")
@@ -103,28 +110,41 @@ class MainMenu:
 
     def _race_condition_menu(self) -> None:
         self.display.header("Demo: Condicao de Corrida")
-        print("1. Sem protecao (mutex desligado)")
-        print("2. Com protecao (mutex ligado)")
+        print("1. Saldo compartilhado - sem mutex")
+        print("2. Saldo compartilhado - com mutex")
+        print("3. Log de transacoes - sem mutex")
+        print("4. Log de transacoes - com mutex")
         sub = input("Escolha: ").strip()
 
-        use_mutex = sub == "2"
-        if sub not in ("1", "2"):
+        if sub in ("1", "2"):
+            use_mutex = sub == "2"
+            result = run_race_condition_demo(
+                num_threads=4, iterations=100, use_mutex=use_mutex
+            )
+            print(f"\n  Threads:           {result['threads']}")
+            print(f"  Iteracoes/thread:  {result['iterations_per_thread']}")
+            print(f"  Saldo esperado:    {result['expected_balance']}")
+            print(f"  Saldo obtido:      {result['actual_balance']}")
+            print(f"  Protegido:         {result['protected']}")
+            status = "CORRETO" if result["correct"] else "INCORRETO (race condition!)"
+            color = "\033[92m" if result["correct"] else "\033[91m"
+            print(f"  Resultado:         {color}{status}\033[0m")
+        elif sub in ("3", "4"):
+            use_mutex = sub == "4"
+            result = run_log_race_demo(
+                num_threads=4, lines_per_thread=50, use_mutex=use_mutex
+            )
+            print(f"\n  Threads:           {result['threads']}")
+            print(f"  Linhas/thread:     {result['lines_per_thread']}")
+            print(f"  Linhas esperadas:  {result['expected_lines']}")
+            print(f"  Linhas no arquivo: {result['actual_lines']}")
+            print(f"  Protegido:         {result['protected']}")
+            status = "CORRETO" if result["correct"] else "INCORRETO (log corrompido!)"
+            color = "\033[92m" if result["correct"] else "\033[91m"
+            print(f"  Resultado:         {color}{status}\033[0m")
+            print(f"  Arquivo:           {result['log_path']}")
+        else:
             print("Opcao invalida.")
-            return
-
-        result = run_race_condition_demo(
-            num_threads=4,
-            iterations=100,
-            use_mutex=use_mutex,
-        )
-        print(f"\n  Threads:           {result['threads']}")
-        print(f"  Iteracoes/thread:    {result['iterations_per_thread']}")
-        print(f"  Saldo esperado:      {result['expected_balance']}")
-        print(f"  Saldo obtido:        {result['actual_balance']}")
-        print(f"  Protegido por mutex: {result['protected']}")
-        status = "CORRETO" if result["correct"] else "INCORRETO (race condition!)"
-        color = "\033[92m" if result["correct"] else "\033[91m"
-        print(f"  Resultado:           {color}{status}\033[0m")
         input("\nPressione Enter para voltar...")
 
     def _producer_consumer_menu(self) -> None:
@@ -161,6 +181,20 @@ class MainMenu:
         self.display.log_lines(result["log"])
         input("\nPressione Enter para voltar...")
 
+    def _memory_menu(self) -> None:
+        self.display.header("Demo: Gerenciamento de Memoria")
+        engine = SimulationEngine(config=self.config)
+        result = engine.run_memory_pressure_demo()
+        self.display.key_value({
+            "alocados_inicialmente": result["allocated_initial"],
+            "bloqueados_inicialmente": result["blocked_initial"],
+            "desbloqueados_apos_free": result["unblocked_after_free"],
+            **result["memory"],
+        })
+        self.display.memory_map(engine.memory)
+        self.display.log_lines(result["log"])
+        input("\nPressione Enter para voltar...")
+
     def _config_menu(self) -> None:
         self.display.header("Configuracoes")
         print(f"Quantum atual: {self.config.quantum}")
@@ -172,6 +206,11 @@ class MainMenu:
         n = input("Novo numero de processos (Enter para manter): ").strip()
         if n.isdigit():
             self.config.num_processes = int(n)
+
+        print(f"Quadros de memoria: {self.config.memory_frames}")
+        m = input("Novo total de quadros (Enter para manter): ").strip()
+        if m.isdigit():
+            self.config.memory_frames = int(m)
 
         print(f"Delay por tick: {self.config.tick_delay}s")
         d = input("Novo delay em segundos (Enter para manter): ").strip()

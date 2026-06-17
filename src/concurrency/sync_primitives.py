@@ -81,6 +81,48 @@ class TransactionLog:
                 f.write(message + "\n")
 
 
+def run_log_race_demo(
+    num_threads: int = 4,
+    lines_per_thread: int = 50,
+    use_mutex: bool = False,
+) -> dict:
+    """Demonstra escrita concorrente em log com/sem mutex."""
+    import tempfile
+
+    log_path = Path(tempfile.gettempdir()) / "bank_log_race_test.log"
+    tx_log = TransactionLog(log_path)
+    expected_lines = num_threads * lines_per_thread
+    threads: list[threading.Thread] = []
+
+    def worker(tid: int) -> None:
+        for i in range(lines_per_thread):
+            msg = f"thread-{tid}-line-{i}"
+            if use_mutex:
+                tx_log.append_safe(msg)
+            else:
+                tx_log.append_unsafe(msg)
+
+    for i in range(num_threads):
+        t = threading.Thread(target=worker, args=(i + 1,), name=f"Logger-{i+1}")
+        threads.append(t)
+
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    actual_lines = len(log_path.read_text(encoding="utf-8").splitlines())
+    return {
+        "expected_lines": expected_lines,
+        "actual_lines": actual_lines,
+        "correct": actual_lines == expected_lines,
+        "protected": use_mutex,
+        "threads": num_threads,
+        "lines_per_thread": lines_per_thread,
+        "log_path": str(log_path),
+    }
+
+
 def run_race_condition_demo(
     num_threads: int = 4,
     iterations: int = 100,

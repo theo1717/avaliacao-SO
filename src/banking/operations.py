@@ -43,6 +43,11 @@ class BankingOperationFactory:
         low, high = BURST_BY_OPERATION[tx_type]
         burst = random.randint(low, high)
         prio = priority or PRIORITY_BY_OPERATION[tx_type]
+        pages = max(1, burst // 3)
+        account_id = random.randint(1, 3)
+        arrival_deadline = arrival_time + burst * 2
+        if prio == Priority.VIP:
+            arrival_deadline = arrival_time + burst + 2
         return pm.create_process(
             name=f"{tx_type.value}-{pm._next_pid}",
             priority=prio,
@@ -50,6 +55,9 @@ class BankingOperationFactory:
             arrival_time=arrival_time,
             quantum=quantum,
             operation_type=tx_type.value,
+            deadline=arrival_deadline,
+            pages_required=pages,
+            account_id=account_id,
         )
 
     @staticmethod

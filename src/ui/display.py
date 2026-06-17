@@ -31,19 +31,31 @@ class Display:
         print(f"{line}{Style.RESET_ALL}")
 
     @staticmethod
-    def process_table(processes: list) -> None:
+    def process_table(processes: list, current_tick: int | None = None) -> None:
         if not processes:
             print("  (nenhum processo)")
             return
-        print(f"\n{'PID':<6}{'Operacao':<20}{'Prior.':<8}{'Estado':<12}{'Rest.':<6}{'Espera':<8}")
-        print("-" * 60)
+        print(
+            f"\n{'PID':<5}{'Operacao':<16}{'Prior.':<7}{'Estado':<10}"
+            f"{'Rest.':<5}{'Espera':<6}{'DL':<5}{'Resp.':<6}"
+        )
+        print("-" * 66)
         for p in processes:
             color = STATE_COLORS.get(p.state.value, "")
+            resp = p.response_time if p.response_time is not None else "-"
+            dl_marker = ""
+            if current_tick is not None and p.deadline < current_tick and p.state.value != "TERMINATED":
+                dl_marker = "!"
+            elif p.deadline_missed:
+                dl_marker = "X"
             print(
-                f"{p.pid:<6}{p.operation_type:<20}{p.priority.name:<8}"
-                f"{color}{p.state.value:<12}{Style.RESET_ALL}"
-                f"{p.remaining_time:<6}{p.waiting_time:<8}"
+                f"{p.pid:<5}{p.operation_type:<16}{p.priority.name:<7}"
+                f"{color}{p.state.value:<10}{Style.RESET_ALL}"
+                f"{p.remaining_time:<5}{p.waiting_time:<6}"
+                f"{p.deadline:<5}{dl_marker:<1}{str(resp):<6}"
             )
+            if p.block_reason:
+                print(f"      bloqueio: {p.block_reason}")
 
     @staticmethod
     def queue_display(ready_queue: list, label: str = "Fila de Execucao") -> None:
@@ -54,24 +66,48 @@ class Display:
             print(" -> ".join(f"PID-{pid}" for pid in ready_queue))
 
     @staticmethod
+    def memory_map(memory_manager, max_rows: int = 16) -> None:
+        print(f"\n{Fore.CYAN}--- Mapa de Memoria ---{Style.RESET_ALL}")
+        summary = memory_manager.summary()
+        print(
+            f"  Quadros: {summary['used_frames']}/{summary['total_frames']} "
+            f"| Page faults: {summary['page_faults']} "
+            f"| Tamanho pagina: {summary['page_size_kb']} KB"
+        )
+        for frame in memory_manager.get_map()[:max_rows]:
+            pid = frame["pid"] if frame["pid"] is not None else "-"
+            print(f"  Frame {frame['frame']:>2}: PID={pid} | {frame['label']}")
+
+    @staticmethod
     def metrics_report(metrics) -> None:
         summary = metrics.summary()
         print(f"\n{Fore.GREEN}--- Relatorio de Metricas ---{Style.RESET_ALL}")
-        print(f"  Ticks totais:        {summary['total_ticks']}")
-        print(f"  Processos concluidos: {summary['completed_count']}")
-        print(f"  Tempo medio espera:  {summary['avg_waiting_time']}")
-        print(f"  Tempo medio resposta: {summary['avg_response_time']}")
+        print(f"  Ticks totais:           {summary['total_ticks']}")
+        print(f"  Processos concluidos:   {summary['completed_count']}")
+        print(f"  Tempo medio espera:     {summary['avg_waiting_time']}")
+        print(f"  Tempo medio resposta:   {summary['avg_response_time']}")
         print(f"  Tempo medio turnaround: {summary['avg_turnaround_time']}")
+        print(f"  Deadlines perdidos:     {summary.get('deadline_misses', 0)}")
+        mem = summary.get("memory", {})
+        if mem:
+            print(
+                f"  Memoria: {mem.get('used_frames', 0)}/{mem.get('total_frames', 0)} "
+                f"quadros | page faults: {mem.get('page_faults', 0)}"
+            )
 
         completed = metrics.completed_report()
         if completed:
-            print(f"\n{'PID':<6}{'Operacao':<20}{'Prior.':<8}{'Espera':<8}{'Resp.':<8}{'Turn.':<8}")
+            print(
+                f"\n{'PID':<5}{'Operacao':<16}{'Prior.':<7}{'Espera':<6}"
+                f"{'Resp.':<6}{'Turn.':<6}{'DL':<5}{'Miss':<5}"
+            )
             print("-" * 58)
             for row in completed:
+                miss = "SIM" if row.get("deadline_missed") else "nao"
                 print(
-                    f"{row['pid']:<6}{row['operation']:<20}{row['priority']:<8}"
-                    f"{row['waiting_time']:<8}{row['response_time']:<8}"
-                    f"{row['turnaround_time']:<8}"
+                    f"{row['pid']:<5}{row['operation']:<16}{row['priority']:<7}"
+                    f"{row['waiting_time']:<6}{row['response_time']:<6}"
+                    f"{row['turnaround_time']:<6}{row.get('deadline', '-'):<5}{miss:<5}"
                 )
 
     @staticmethod

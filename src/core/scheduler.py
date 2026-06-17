@@ -7,11 +7,28 @@ from src.core.process_manager import ProcessManager
 
 
 class Scheduler(ABC):
-    def __init__(self, process_manager: ProcessManager, metrics: SimulationMetrics) -> None:
+    def __init__(
+        self,
+        process_manager: ProcessManager,
+        metrics: SimulationMetrics,
+        resource_gate=None,
+    ) -> None:
         self.pm = process_manager
         self.metrics = metrics
+        self.resource_gate = resource_gate
         self.current_process: PCB | None = None
         self.quantum_remaining: int = 0
+
+    def _acquire_next_ready(self, current_tick: int) -> PCB | None:
+        attempts = len(self.pm.ready_queue) + 1
+        for _ in range(max(attempts, 1)):
+            next_pcb = self.select_next()
+            if next_pcb is None:
+                return None
+            if self.resource_gate and not self.resource_gate(next_pcb, current_tick):
+                continue
+            return next_pcb
+        return None
 
     @abstractmethod
     def select_next(self) -> PCB | None:
@@ -23,15 +40,13 @@ class Scheduler(ABC):
 
     def tick(self, current_tick: int, sleep_fn=None) -> bool:
         """Execute one simulation tick. Returns True if simulation continues."""
-        self.pm.admit_arrived(current_tick)
-
         for pid in list(self.pm.ready_queue):
             pcb = self.pm.get_process(pid)
             if pcb.state == ProcessState.READY and pcb.last_scheduled_tick != current_tick:
                 pcb.waiting_time += 1
 
         if self.current_process is None or self.current_process.state != ProcessState.RUNNING:
-            next_pcb = self.select_next()
+            next_pcb = self._acquire_next_ready(current_tick)
             if next_pcb is None:
                 active = self.pm.get_active_processes()
                 if not active or all(
@@ -76,8 +91,9 @@ class RoundRobinScheduler(Scheduler):
         process_manager: ProcessManager,
         metrics: SimulationMetrics,
         quantum: int = 2,
+        resource_gate=None,
     ) -> None:
-        super().__init__(process_manager, metrics)
+        super().__init__(process_manager, metrics, resource_gate=resource_gate)
         self.quantum = quantum
         self._queue: deque[int] = deque()
 
@@ -108,8 +124,9 @@ class PriorityScheduler(Scheduler):
         process_manager: ProcessManager,
         metrics: SimulationMetrics,
         aging_interval: int = 5,
+        resource_gate=None,
     ) -> None:
-        super().__init__(process_manager, metrics)
+        super().__init__(process_manager, metrics, resource_gate=resource_gate)
         self.aging_interval = aging_interval
         self._ticks_since_aging = 0
 
@@ -143,4 +160,42 @@ class PriorityScheduler(Scheduler):
 
     def tick(self, current_tick: int, sleep_fn=None) -> bool:
         self._apply_aging(current_tick)
+        return super().tick(current_tick, sleep_fn)
+
+
+class EDFScheduler(Scheduler):
+    """Earliest Deadline First - escalonamento em tempo real por deadline."""
+
+    def select_next(self) -> PCB | None:
+        ready = [
+            self.pm.get_process(pid)
+            for pid in self.pm.ready_queue
+            if self.pm.get_process(pid).state == ProcessState.READY
+        ]
+        if not ready:
+            return None
+        ready.sort(key=lambda p: (p.deadline, p.arrival_time, p.pid))
+        selected = ready[0]
+        self.quantum_remaining = selected.remaining_time
+        return selected
+
+    def on_preempt(self, pcb: PCB) -> None:
+        pcb.state = ProcessState.READY
+
+    def tick(self, current_tick: int, sleep_fn=None) -> bool:
+        if (
+            self.current_process
+            and self.current_process.state == ProcessState.RUNNING
+        ):
+            ready = [
+                self.pm.get_process(pid)
+                for pid in self.pm.ready_queue
+                if self.pm.get_process(pid).state == ProcessState.READY
+            ]
+            if ready:
+                earliest = min(ready, key=lambda p: (p.deadline, p.pid))
+                if earliest.deadline < self.current_process.deadline:
+                    self.on_preempt(self.current_process)
+                    self.current_process = None
+
         return super().tick(current_tick, sleep_fn)

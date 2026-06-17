@@ -32,6 +32,10 @@ class PCB:
     waiting_time: int = 0
     last_scheduled_tick: int | None = None
     operation_type: str = "operacao"
+    pages_required: int = 1
+    account_id: int = 1
+    block_reason: str = ""
+    deadline_missed: bool = False
 
     def __post_init__(self) -> None:
         if self.deadline == 0:
@@ -63,4 +67,16 @@ class PCB:
             "waiting_time": self.waiting_time,
             "response_time": self.response_time,
             "turnaround_time": self.turnaround_time,
+            "pages_required": self.pages_required,
+            "account_id": self.account_id,
+            "block_reason": self.block_reason,
+            "deadline_missed": self.deadline_missed,
         }
+
+    def needs_account_lock(self) -> bool:
+        return self.operation_type in (
+            "Transferencia",
+            "Saque",
+            "Deposito",
+            "PagamentoEmprestimo",
+        )
