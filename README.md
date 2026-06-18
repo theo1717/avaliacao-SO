@@ -21,7 +21,7 @@ python -m pytest tests/ -v
 
 | Documento | Descrição |
 |---|---|
-| [Guia de Uso](docs/GUIA_DE_USO.md) | Manual completo: fluxos passo a passo, o que observar em cada tela e mapeamento aos requisitos do item 3 |
+| [Guia de Uso](docs/GUIA_DE_USO.md) | Manual completo: fluxos passo a passo |
 
 ## Mapa: Conceito SO → Temática Bancária
 
