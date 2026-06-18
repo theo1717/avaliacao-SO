@@ -22,10 +22,6 @@ python -m pytest tests/ -v
 | Documento | Descrição |
 |---|---|
 | [Guia de Uso](docs/GUIA_DE_USO.md) | Manual completo: fluxos passo a passo, o que observar em cada tela e mapeamento aos requisitos do item 3 |
-| [Roteiro de Apresentação](docs/ROTEIRO_APRESENTACAO.md) | Script cronometrado (~17 min) para demonstração oral à banca |
-| [Perguntas Técnicas](docs/perguntasTecnicas.md) | Respostas preparadas para perguntas da banca sobre escalonamento, sincronização, deadlock, memória, etc. |
-| [Explicação do Código](docs/explicacaoCodigo.md) | Estrutura do projeto, papel de cada arquivo e fluxo de execução |
-| [Guia de Slides](docs/slides.md) | Roteiro para montar a apresentação em slides |
 
 ## Mapa: Conceito SO → Temática Bancária
 
@@ -80,18 +76,3 @@ Ao iniciar, o sistema exibe o painel do **Banco Nexus** com contas ativas e sald
 | `collections`, `dataclasses`, `enum` | Estruturas de dados | Implementação própria |
 
 **Importante:** Os algoritmos de escalonamento, gerência de processos, memória, buffer produtor-consumidor e cenários de deadlock são implementação própria.
-
-## Requisitos atendidos
-
-- [x] Criação, finalização, bloqueio/desbloqueio e prioridades de processos
-- [x] PCB com PID, prioridade, burst, estado, quantum e deadline
-- [x] Múltiplas threads reais (`threading.Thread`)
-- [x] Três algoritmos de escalonamento: Round Robin, Prioridade e EDF
-- [x] Métricas: fila, tempo de espera, resposta, processos concluídos, deadlines
-- [x] Gerenciamento de memória com alocação, liberação e page faults
-- [x] Mutex e semáforos com demonstração de condição de corrida (saldo e log)
-- [x] Cenário produtor-consumidor
-- [x] Simulação e prevenção de deadlock
-- [x] Bloqueio de processos por conta bancária em uso
-- [x] Interface terminal com menus navegáveis
-- [x] Código modularizado em arquivos e classes
