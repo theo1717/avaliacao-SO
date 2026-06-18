@@ -99,35 +99,6 @@ class ProcessManager:
             if p.state != ProcessState.TERMINATED
         ]
 
-    def generate_random_processes(
-        self,
-        count: int,
-        quantum: int = 2,
-        arrival_spread: int = 3,
-        current_tick: int = 0,
-    ) -> list[PCB]:
-        created: list[PCB] = []
-        for i in range(count):
-            priority = random.choices(
-                [Priority.VIP, Priority.NORMAL, Priority.BATCH],
-                weights=[2, 5, 3],
-            )[0]
-            burst = random.randint(2, 8)
-            arrival = current_tick + random.randint(0, arrival_spread)
-            op = random.choice(OPERATION_TYPES)
-            pcb = self.create_process(
-                name=f"Proc-{self._next_pid}",
-                priority=priority,
-                burst_time=burst,
-                arrival_time=arrival,
-                quantum=quantum,
-                operation_type=op,
-            )
-            if arrival == current_tick:
-                self.admit_process(pcb.pid)
-            created.append(pcb)
-        return created
-
     def admit_arrived(self, current_tick: int) -> list[int]:
         admitted: list[int] = []
         for pcb in self.processes.values():
