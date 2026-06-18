@@ -48,9 +48,16 @@ class SharedBalance:
         self.balance = initial
         self.mutex = BankMutex("saldo")
 
-    def deposit_unsafe(self, amount: float, iterations: int = 100) -> None:
+    def deposit_unsafe(
+        self,
+        amount: float,
+        iterations: int = 100,
+        sync_barrier: threading.Barrier | None = None,
+    ) -> None:
         for _ in range(iterations):
             temp = self.balance
+            if sync_barrier is not None:
+                sync_barrier.wait()
             temp += amount
             self.balance = temp
 
@@ -132,12 +139,13 @@ def run_race_condition_demo(
     shared = SharedBalance(0.0)
     expected = num_threads * iterations * 1.0
     threads: list[threading.Thread] = []
+    sync_barrier = None if use_mutex else threading.Barrier(num_threads)
 
     def worker() -> None:
         if use_mutex:
             shared.deposit_safe(1.0, iterations)
         else:
-            shared.deposit_unsafe(1.0, iterations)
+            shared.deposit_unsafe(1.0, iterations, sync_barrier=sync_barrier)
 
     for i in range(num_threads):
         t = threading.Thread(target=worker, name=f"ATM-{i+1}")
