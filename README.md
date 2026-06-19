@@ -76,3 +76,19 @@ Ao iniciar, o sistema exibe o painel do **Banco Nexus** com contas ativas e sald
 | `collections`, `dataclasses`, `enum` | Estruturas de dados | Implementação própria |
 
 **Importante:** Os algoritmos de escalonamento, gerência de processos, memória, buffer produtor-consumidor e cenários de deadlock são implementação própria.
+
+## Referências utilizadas
+
+### Bibliografia
+
+- Slides das aulas disponibilizados no AVA: https://ava.fiep.digital/
+
+### Documentação técnica
+
+- PYTHON SOFTWARE FOUNDATION. **threading — Thread-based parallelism**. Documentação Python 3. Disponível em: https://docs.python.org/3/library/threading.html. Acesso em: 18 jun. 2026.
+
+- PYTHON SOFTWARE FOUNDATION. **Documentação Python 3**. Disponível em: https://docs.python.org/3/. Acesso em: 18 jun. 2026.
+
+- TARTIFLETTE, Jonathan. **colorama**. PyPI. Disponível em: https://pypi.org/project/colorama/. Acesso em: 18 jun. 2026.
+
+- PYTEST DEVELOPMENT TEAM. **pytest documentation**. Disponível em: https://docs.pytest.org/. Acesso em: 18 jun. 2026.
